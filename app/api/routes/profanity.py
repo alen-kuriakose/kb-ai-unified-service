@@ -68,19 +68,39 @@ def profanity_check_transformer(payload: ProfanityCheckRequest):
     detected_language = None
     if result and result.get('responseData'):
         detected_language_raw = result['responseData'].get('detected_language')
-        # Map detected language to 'english' or 'indic'
-        if str(detected_language_raw).lower() in ("english", "mixed/english"):
+        advanced_detection = result['responseData'].get('advanced_detection', {})
+        
+        # Map detected language to 'english' or 'indic' for backward compatibility
+        if str(detected_language_raw).lower() in ("english", "mixed_english"):
             detected_language = "english"
-        else:
+        elif str(detected_language_raw).lower().startswith("code_mixed_"):
+            detected_language = "code_mixed"
+        elif str(detected_language_raw).lower() in ["hindi", "tamil", "telugu", "bengali", "kannada", "malayalam", "gujarati", "punjabi", "oriya", "marathi", "urdu"]:
             detected_language = "indic"
+        else:
+            detected_language = "unknown"
+            
         # Add user_language and cross-verification info
         result['responseData']['user_language'] = user_language_lc
         result['responseData']['detected_language_group'] = detected_language
         if user_language_lc:
-            result['responseData']['language_match'] = (
-                user_language_lc == detected_language)
+            # Enhanced matching logic
+            if user_language_lc == "english" and detected_language in ["english", "code_mixed"]:
+                result['responseData']['language_match'] = True
+            elif user_language_lc == "indic" and detected_language in ["indic", "code_mixed"]:
+                result['responseData']['language_match'] = True
+            else:
+                result['responseData']['language_match'] = False
         else:
             result['responseData']['language_match'] = None
+            
+        # Add enhanced detection details
+        result['responseData']['enhanced_detection'] = {
+            "xlm_prediction": advanced_detection.get('xlm_prediction'),
+            "xlm_confidence": advanced_detection.get('xlm_confidence'),
+            "code_mixed": advanced_detection.get('code_mixed', False),
+            "script_distribution": advanced_detection.get('distribution', {})
+        }
     return result
 
 # Language detection endpoint (English/Indic only)

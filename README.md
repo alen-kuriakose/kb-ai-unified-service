@@ -73,7 +73,15 @@ pip install -r requirements.txt
 
 **Key dependencies for profanity detection:**
 - `torch` and `transformers` (for English/Indic transformer-based detection)
-- `fasttext` (for fastText-based detection)
+- `fasttext` (for fastText-based detection)  
+- `pandas` (for data processing)
+- `tqdm` (for progress tracking)
+- `scikit-learn` (for machine learning utilities)
+
+**Models used:**
+- **XLM-RoBERTa**: `papluca/xlm-roberta-base-language-detection` for language detection
+- **English Toxicity**: `unitary/toxic-bert` for English profanity detection
+- **Indic/Code-mixed**: `Hate-speech-CNERG/indic-abusive-allInOne-MuRIL` for Indic languages
 
 4. Run the app:
 
@@ -164,10 +172,10 @@ uvicorn main:app --reload --port 5000
     }
     ```
 
-### 4. Profanity Check (Transformer, English/Indic)
+### 4. Profanity Check (Transformer, English/Indic with Advanced Language Detection)
 
 - **Endpoint:** `POST /api/v1/profanity/transformer`
-- **Description:** Check for profanity in text using transformer models. Supports English and Indic languages. Optionally accepts a `language` field for cross-verification.
+- **Description:** Check for profanity in text using transformer models with advanced language detection. Supports English, Indic languages, and code-mixed content. Uses XLM-RoBERTa for language classification and intelligent model routing.
 - **Request Body:**
     ```json
     {
@@ -179,29 +187,45 @@ uvicorn main:app --reload --port 5000
     ```json
     {
       "status": "success",
-      "message": "Profanity check completed (transformer)",
+      "message": "Profanity check completed (transformer - English/Indic)",
       "responseData": {
         "word": "string",
         "isProfane": true,
         "confidence": 99.9,
         "category": "Profane|Non-Profane|Clean",
-        "detected_language": "english|hindi|...",
+        "detected_language": "english|hindi|code_mixed_hindi_english|...",
+        "model_used": "English (unitary/toxic-bert)|Indic (MuRIL)",
         "user_language": "english|indic|null",
-        "detected_language_group": "english|indic",
+        "detected_language_group": "english|indic|code_mixed",
         "language_match": true|false|null,
-        "toxic_labels": "toxic,insult,...|null"
+        "toxic_labels": "toxic,insult,...|null",
+        "enhanced_detection": {
+          "xlm_prediction": "english|hindi|...",
+          "xlm_confidence": 0.95,
+          "code_mixed": true|false,
+          "script_distribution": {"english": 0.7, "hindi": 0.3}
+        }
       }
     }
     ```
+
+#### Advanced Language Detection Features
+- **XLM-RoBERTa Integration**: Uses `papluca/xlm-roberta-base-language-detection` for accurate multilingual classification
+- **Code-Mixed Detection**: Identifies Hinglish and other code-mixed content patterns
+- **Script Analysis**: Analyzes Unicode character distribution across different Indic scripts
+- **Intelligent Model Routing**: 
+  - Pure English → `unitary/toxic-bert` (English toxicity model)
+  - Indic languages & code-mixed → `Hate-speech-CNERG/indic-abusive-allInOne-MuRIL`
+- **Pattern Recognition**: Detects common code-mixing patterns and English words mixed with Indic scripts
 
 #### Language Validation
 - Only `"english"` or `"indic"` are accepted for the `language` field. Any other value will return an error.
 - The API will cross-verify the user-provided language with the detected language group and return a `language_match` boolean.
 
-### 5. Language Detection (English/Indic only)
+### 5. Language Detection (Advanced English/Indic Detection)
 
 - **Endpoint:** `POST /api/v1/profanity/detect_language`
-- **Description:** Detect if the input text is English or Indic (minimum 5 characters required).
+- **Description:** Advanced language detection using XLM-RoBERTa and script analysis. Detects English, Indic languages, and code-mixed content (minimum 5 characters required).
 - **Request Body:**
     ```json
     {
@@ -212,10 +236,25 @@ uvicorn main:app --reload --port 5000
     ```json
     {
       "status": "success",
-      "detected_language": "english|indic",
-      "raw": "english|hindi|tamil|..."
+      "detected_language": "english|indic|code_mixed|unknown",
+      "raw": "english|hindi|code_mixed_hindi_english|...",
+      "confidence": 0.95,
+      "details": {
+        "xlm_prediction": "english|hindi|...",
+        "xlm_confidence": 0.98,
+        "script_distribution": {"english": 0.7, "hindi": 0.3},
+        "code_mixed": true|false,
+        "patterns_found": 2
+      }
     }
     ```
+
+#### Language Detection Capabilities
+- **Supports**: English, Hindi, Tamil, Telugu, Bengali, Kannada, Malayalam, Gujarati, Punjabi, Oriya, Marathi, Urdu
+- **Code-Mixed Detection**: Hinglish, Tamil-English, and other combinations
+- **XLM-RoBERTa**: High-accuracy transformer-based language identification
+- **Script Analysis**: Unicode-based character distribution analysis
+- **Pattern Matching**: Regex patterns for common code-mixing indicators
 
 ### 6. Health Check
 
