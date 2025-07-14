@@ -2,7 +2,6 @@
 import pandas as pd
 import os
 import logging
-import fasttext
 from google import genai
 from google.genai import types
 import torch
@@ -447,47 +446,6 @@ def _process_indic_model(text: str, detected_lang: str, _: dict):
     }
 
 logger = logging.getLogger("uvicorn.error")
-
-# Load fastText model once (assume model is at app/services/profanity_model.bin or similar)
-FASTTEXT_MODEL_PATH = os.environ.get(
-    "FASTTEXT_PROFANITY_MODEL", "app/services/profanity_model_english.bin")
-fasttext_model = None
-if os.path.exists(FASTTEXT_MODEL_PATH):
-    try:
-        fasttext_model = fasttext.load_model(FASTTEXT_MODEL_PATH)
-        logger.info(f"Loaded fastText model from {FASTTEXT_MODEL_PATH}")
-    except Exception as e:
-        logger.error(f"Could not load fastText model: {e}")
-else:
-    logger.warning(f"fastText model not found at {FASTTEXT_MODEL_PATH}")
-
-
-def check_profanity_fasttext(text: str):
-    logger.info(f"Checking profanity (fastText) for: {text}")
-    if not fasttext_model:
-        logger.error("fastText model not loaded")
-        return {
-            "status": "error",
-            "message": "fastText model not loaded",
-            "responseData": None
-        }
-    labels, probabilities = fasttext_model.predict(text)
-    label = labels[0]
-    confidence = float(probabilities[0])
-    is_profane = label == "__label__offensive"
-    category = "profane" if is_profane else "clean"
-    logger.info(
-        f"Prediction: {label}, Confidence: {confidence}, Category: {category}")
-    return {
-        "status": "success",
-        "message": PROFANITY_CHECK_COMPLETED,
-        "responseData": {
-            "text": text,
-            "isProfane": is_profane,
-            "confidence": round(confidence*100, 2),
-            "category": category
-        }
-    }
 
 
 def check_profanity_llm(text: str):

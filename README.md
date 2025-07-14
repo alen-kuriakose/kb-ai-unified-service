@@ -65,15 +65,14 @@ kb-ai-unified-service/
 2. Copy `.env.example` to `.env` and set your Gemini LLM API key and URL.
 
 
-3. Install dependencies (includes support for transformer and fastText models):
+3. Install dependencies (includes support for transformer models):
 
 ```
 pip install -r requirements.txt
 ```
 
 **Key dependencies for profanity detection:**
-- `torch` and `transformers` (for English/Indic transformer-based detection)
-- `fasttext` (for fastText-based detection)  
+- `torch` and `transformers` (for English/Indic transformer-based detection)  
 - `pandas` (for data processing)
 - `tqdm` (for progress tracking)
 - `scikit-learn` (for machine learning utilities)
@@ -124,31 +123,7 @@ uvicorn main:app --reload --port 5000
     ```
 
 
-### 2. Profanity Check (fastText)
-
-- **Endpoint:** `POST /api/v1/profanity/fasttext`
-- **Description:** Check for profanity in text using a fastText model.
-- **Request Body:**
-    ```json
-    {
-      "text": "string"
-    }
-    ```
-- **Response:**
-    ```json
-    {
-      "status": "success",
-      "message": "Profanity check completed",
-      "responseData": {
-        "word": "string",
-        "isProfane": true,
-        "confidence": 99.9,
-        "category": "profane|clean"
-      }
-    }
-    ```
-
-### 3. Profanity Check (LLM)
+### 2. Profanity Check (LLM)
 
 - **Endpoint:** `POST /api/v1/profanity/profanity_validator`
 - **Description:** Check for profanity in text using an LLM.
@@ -172,7 +147,7 @@ uvicorn main:app --reload --port 5000
     }
     ```
 
-### 4. Profanity Check (Transformer, English/Indic with Advanced Language Detection)
+### 3. Profanity Check (Transformer, English/Indic with Advanced Language Detection)
 
 - **Endpoint:** `POST /api/v1/profanity/transformer`
 - **Description:** Check for profanity in text using transformer models with advanced language detection. Supports English, Indic languages, and code-mixed content. Uses XLM-RoBERTa for language classification and intelligent model routing.
@@ -222,7 +197,7 @@ uvicorn main:app --reload --port 5000
 - Only `"english"` or `"indic"` are accepted for the `language` field. Any other value will return an error.
 - The API will cross-verify the user-provided language with the detected language group and return a `language_match` boolean.
 
-### 5. Language Detection (Advanced English/Indic Detection)
+### 4. Language Detection (Advanced English/Indic Detection)
 
 - **Endpoint:** `POST /api/v1/profanity/detect_language`
 - **Description:** Advanced language detection using XLM-RoBERTa and script analysis. Detects English, Indic languages, and code-mixed content (minimum 5 characters required).
@@ -256,7 +231,7 @@ uvicorn main:app --reload --port 5000
 - **Script Analysis**: Unicode-based character distribution analysis
 - **Pattern Matching**: Regex patterns for common code-mixing indicators
 
-### 6. Health Check
+### 5. Health Check
 
 - **Endpoint:** `GET /health`
 - **Description:** Check the health of the service and its dependencies (e.g., Redis, competency framework).

@@ -3,30 +3,9 @@ from dotenv import load_dotenv
 import logging
 from google import genai
 from google.genai import types
-import fasttext
 
 load_dotenv()
 logger = logging.getLogger("uvicorn.error")
-
-# Load fastText model once (assume model is at app/services/lid.176.bin or similar)
-FASTTEXT_MODEL_PATH = os.environ.get("FASTTEXT_PROFANITY_MODEL", "app/services/profanity_model.bin")
-fasttext_model = None
-if os.path.exists(FASTTEXT_MODEL_PATH):
-    try:
-        fasttext_model = fasttext.load_model(FASTTEXT_MODEL_PATH)
-    except Exception as e:
-        logger.error(f"Could not load fastText model: {e}")
-else:
-    logger.warning(f"fastText model not found at {FASTTEXT_MODEL_PATH}")
-
-def check_profanity_fasttext(text: str):
-    if not fasttext_model:
-        return False, "fastText model not loaded"
-    labels, probabilities = fasttext_model.predict(text)
-    # Assume model returns '__label__profane' for profane text
-    is_profane = any(l == "__label__profane" for l in labels)
-    details = f"Labels: {labels}, Probabilities: {probabilities}"
-    return is_profane, details
 
 
 def map_role_to_competencies_gemini(prompt_text: str, competency_framework_json: str, organization: str, role_title: str, department: str = None):

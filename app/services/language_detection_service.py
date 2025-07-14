@@ -20,7 +20,8 @@ try:
     HF_AVAILABLE = True
 except ImportError:
     HF_AVAILABLE = False
-    logging.warning("Transformers library not available. Please install with: pip install transformers torch")
+    logging.warning(
+        "Transformers library not available. Please install with: pip install transformers torch")
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -42,9 +43,11 @@ LANGUAGE_NAMES = {
 INDIC_LANGUAGES = {'hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'pa', 'ur'}
 ENGLISH_LANGUAGES = {'en'}
 
+
 def get_language_name(code: str) -> str:
     """Get human-readable language name from code."""
     return LANGUAGE_NAMES.get(code.lower(), f"Unknown ({code})")
+
 
 def get_language_group(code: str) -> str:
     """Get language group for profanity detection routing."""
@@ -56,17 +59,19 @@ def get_language_group(code: str) -> str:
     else:
         return "other"
 
+
 class LanguageDetector:
     """Simple XLM-RoBERTa based language detector."""
-    
+
     def __init__(self):
         """Initialize the language detector."""
         if not HF_AVAILABLE:
-            logger.error("Transformers library required. Install with: pip install transformers torch")
+            logger.error(
+                "Transformers library required. Install with: pip install transformers torch")
             self.classifier = None
             self.available = False
             return
-        
+
         try:
             self.classifier = pipeline(
                 "text-classification",
@@ -74,19 +79,20 @@ class LanguageDetector:
                 top_k=None
             )
             self.available = True
-            logger.info("Successfully loaded XLM-RoBERTa language detection model")
+            logger.info(
+                "Successfully loaded XLM-RoBERTa language detection model")
         except Exception as e:
             logger.error(f"Failed to load language detection model: {e}")
             self.classifier = None
             self.available = False
-    
+
     def detect(self, text: str) -> Dict[str, Any]:
         """
         Detect the language of the given text.
-        
+
         Args:
             text (str): Text to analyze
-            
+
         Returns:
             Dict with language detection results
         """
@@ -97,7 +103,7 @@ class LanguageDetector:
                 'language': None,
                 'confidence': 0.0
             }
-            
+
         if not text or not text.strip():
             return {
                 'error': 'Input text cannot be empty',
@@ -105,27 +111,29 @@ class LanguageDetector:
                 'language': None,
                 'confidence': 0.0
             }
-        
+
         try:
             # Get predictions from model
             results = self.classifier(text)
-            
+
             # Handle different output formats
             if isinstance(results, list) and len(results) > 0:
-                predictions = results[0] if isinstance(results[0], list) else results
+                predictions = results[0] if isinstance(
+                    results[0], list) else results
             else:
                 raise ValueError("Unexpected model output format")
-            
+
             # Sort by confidence and format
-            sorted_predictions = sorted(predictions, key=lambda x: x['score'], reverse=True)
-            
+            sorted_predictions = sorted(
+                predictions, key=lambda x: x['score'], reverse=True)
+
             # Get top prediction
             top_pred = sorted_predictions[0]
             language_code = top_pred['label'].lower()
             confidence = top_pred['score']
             language_name = get_language_name(language_code)
             language_group = get_language_group(language_code)
-            
+
             return {
                 'language_code': language_code,
                 'language': language_name,
@@ -142,7 +150,7 @@ class LanguageDetector:
                     for pred in sorted_predictions[:5]
                 ]
             }
-            
+
         except Exception as e:
             logger.error(f"Language detection error: {str(e)}")
             return {
@@ -151,7 +159,7 @@ class LanguageDetector:
                 'language': None,
                 'confidence': 0.0
             }
-    
+
     def get_model_info(self) -> Dict[str, str]:
         """Get information about the model."""
         return {
@@ -162,8 +170,10 @@ class LanguageDetector:
             "available": str(self.available)
         }
 
+
 # Global instance for reuse
 _language_detector = None
+
 
 def get_language_detector():
     """Get or create the language detector instance"""
@@ -171,6 +181,7 @@ def get_language_detector():
     if _language_detector is None:
         _language_detector = LanguageDetector()
     return _language_detector
+
 
 def detect_language_service(text: str, min_chars: int = 5):
     """Enhanced language detection service using clean XLM-RoBERTa detection"""
@@ -180,21 +191,21 @@ def detect_language_service(text: str, min_chars: int = 5):
             "message": f"Input text must be at least {min_chars} characters.",
             "detected_language": None
         }
-    
+
     try:
         # Get the language detector
         detector = get_language_detector()
-        
+
         # Use clean detection
         result = detector.detect(text)
-        
+
         if 'error' in result:
             return {
                 "status": "error",
                 "message": result['error'],
                 "detected_language": None
             }
-        
+
         # Map to simplified categories for backward compatibility
         language_group = result.get('language_group', 'other')
         if language_group == 'english':
@@ -203,7 +214,7 @@ def detect_language_service(text: str, min_chars: int = 5):
             detected_language_group = "indic"
         else:
             detected_language_group = "other"
-        
+
         return {
             "status": "success",
             "detected_language": detected_language_group,
@@ -213,7 +224,8 @@ def detect_language_service(text: str, min_chars: int = 5):
             "details": {
                 "model_used": "XLM-RoBERTa (ZheYu03/xlm-r-langdetect-model)",
                 "text_length": result['text_length'],
-                "top_predictions": result.get('all_predictions', [])[:3]  # Top 3 predictions
+                # Top 3 predictions
+                "top_predictions": result.get('all_predictions', [])[:3]
             }
         }
     except Exception as e:
@@ -224,11 +236,12 @@ def detect_language_service(text: str, min_chars: int = 5):
             "detected_language": None
         }
 
+
 def main():
     """Demo usage of the language detector."""
     print("🌐 Language Detection Demo")
     print("=" * 40)
-    
+
     test_texts = [
         "Hello, how are you today?",
         "Bonjour, comment allez-vous?",
@@ -236,29 +249,31 @@ def main():
         "नमस्ते, आप कैसे हैं?",
         "Tu literal definition hai chutiyapa ka"
     ]
-    
+
     try:
         detector = LanguageDetector()
         info = detector.get_model_info()
         print(f"Using: {info['name']} ({info['accuracy']})")
         print()
-        
+
         for text in test_texts:
             result = detector.detect(text)
-            
+
             if 'error' not in result:
                 print(f"Text: '{text}'")
-                print(f"Language: {result['language']} ({result['language_code']})")
+                print(
+                    f"Language: {result['language']} ({result['language_code']})")
                 print(f"Group: {result['language_group']}")
                 print(f"Confidence: {result['confidence']:.1%}")
                 print()
             else:
                 print(f"Error: {result['error']}")
                 print()
-                
+
     except Exception as e:
         print(f"Error: {e}")
         print("Make sure to install: pip install transformers torch")
+
 
 if __name__ == "__main__":
     main()

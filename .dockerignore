@@ -9,8 +9,6 @@ venv/
 .DS_Store
 logs/
 *.log
-# Ignore model files unless you want them in the image
-*.bin
 # Ignore test and notebook files
 *.ipynb
 tests/

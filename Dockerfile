@@ -16,11 +16,6 @@ COPY main.py main.py
 COPY competency_framework.json competency_framework.json
 
 
-# Install build tools for fastText
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
 # Install dependencies using uv with system flag
 RUN uv pip install --system -r requirements.txt
 
